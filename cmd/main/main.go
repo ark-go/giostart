@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math"
 	"os"
 	"time"
 
@@ -92,25 +93,69 @@ func draw(w *app.Window) error {
 					// Empty space is left at the start, i.e. at the top
 					Spacing: layout.SpaceStart,
 				}.Layout(gtx,
+
 					layout.Rigid(
+						//! круг
+						// func(gtx C) D {
+						// 	circle := clip.Circle{
+						// 		// Hard coding the x coordinate. Try resizing the window
+						// 		Center: f32.Point{X: 200, Y: 200},
+						// 		// Soft coding the x coordinate. Try resizing the window
+						// 		// Center: f32.Point{X: float32(gtx.Constraints.Max.X) / 2, Y: 200},
+						// 		Radius: 120,
+						// 	}.Op(gtx.Ops)
+						// 	color := color.NRGBA{R: 200, A: 255}
+						// 	paint.FillShape(gtx.Ops, color, circle)
+						// 	d := image.Point{Y: 500}
+						// 	return layout.Dimensions{Size: d}
+						// },
 						func(gtx C) D {
-							bar := material.ProgressBar(th, progress) // Here progress is used
-							return bar.Layout(gtx)
+							// Draw a custom path, shaped like an egg
+							var eggPath clip.Path
+							op.Offset(f32.Pt(200, 150)).Add(gtx.Ops)
+							eggPath.Begin(gtx.Ops)
+							// Rotate from 0 to 360 degrees
+							for deg := 0.0; deg <= 360; deg++ {
+
+								// Egg math (really) at this brilliant site. Thanks!
+								// https://observablehq.com/@toja/egg-curve
+								// Convert degrees to radians
+								rad := deg / 360 * 2 * math.Pi
+								// Trig gives the distance in X and Y direction
+								cosT := math.Cos(rad)
+								sinT := math.Sin(rad)
+								// Constants to define the eggshape
+								a := 110.0
+								b := 150.0
+								d := 20.0
+								// The x/y coordinates
+								x := a * cosT
+								y := -(math.Sqrt(b*b-d*d*cosT*cosT) + d*sinT) * sinT
+								// Finally the point on the outline
+								p := f32.Pt(float32(x), float32(y))
+								// Draw the line to this point
+								eggPath.LineTo(p)
+							}
+							// Close the path
+							eggPath.Close()
+
+							// Get hold of the actual clip
+							eggArea := clip.Outline{Path: eggPath.End()}.Op()
+
+							// Fill the shape
+							// color := color.NRGBA{R: 255, G: 239, B: 174, A: 255}
+							color := color.NRGBA{R: 255, G: uint8(239 * (1 - progress)), B: uint8(174 * (1 - progress)), A: 255}
+							paint.FillShape(gtx.Ops, color, eggArea)
+
+							d := image.Point{Y: 375}
+							return layout.Dimensions{Size: d}
 						},
 					),
 					layout.Rigid(
 						func(gtx C) D {
-							circle := clip.Circle{
-								// Hard coding the x coordinate. Try resizing the window
-								Center: f32.Point{X: 200, Y: 200},
-								// Soft coding the x coordinate. Try resizing the window
-								// Center: f32.Point{X: float32(gtx.Constraints.Max.X) / 2, Y: 200},
-								Radius: 120,
-							}.Op(gtx.Ops)
-							color := color.NRGBA{R: 200, A: 255}
-							paint.FillShape(gtx.Ops, color, circle)
-							d := image.Point{Y: 500}
-							return layout.Dimensions{Size: d}
+							bar := material.ProgressBar(th, progress) // Here progress is used
+
+							return bar.Layout(gtx)
 						},
 					),
 					layout.Rigid(
@@ -128,11 +173,12 @@ func draw(w *app.Window) error {
 								func(gtx C) D {
 									var text string
 									if !boiling {
-										text = "Start"
+										text = "Старт"
 									} else {
-										text = "Stop"
+										text = "Стоп"
 									}
 									btn := material.Button(th, &startButton, text)
+									btn.TextSize = unit.Dp(20)
 									return btn.Layout(gtx)
 								},
 							)
@@ -148,6 +194,7 @@ func draw(w *app.Window) error {
 			if boiling && progress < 1 {
 				progress += p
 				w.Invalidate() // перерисовать экран
+				//	op.InvalidateOp{At: gtx.Now.Add(time.Second / 25)}.Add(&ops)
 			} else if progress >= 1 {
 				progress = 0
 				w.Invalidate()
