@@ -2,7 +2,10 @@ module github.com/ark-go/giostart
 
 go 1.17
 
-require gioui.org v0.0.0-20210916084942-c9d85c97e118
+require (
+	gioui.org v0.0.0-20210916084942-c9d85c97e118
+	gioui.org/x v0.0.0-20210915201858-6e7db83bff59
+)
 
 require (
 	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
