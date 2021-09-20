@@ -38,7 +38,7 @@ func main() {
 			// MaxSize MinSize Both
 		)
 
-		if err := internal.Draw1(w); err != nil {
+		if err := internal.Draw3(w); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)

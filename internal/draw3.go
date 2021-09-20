@@ -2,18 +2,23 @@ package internal
 
 import (
 	"fmt"
+	"image"
 	"image/color"
+	"log"
 	"math"
 	"strconv"
 	"strings"
 	"time"
 
 	"gioui.org/app"
+	"gioui.org/f32"
 	"gioui.org/font/gofont"
 	"gioui.org/io/pointer"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
 	"gioui.org/widget"
@@ -23,7 +28,7 @@ import (
 
 //type cursor pointer.CursorName
 
-func Draw1(w *app.Window) error {
+func Draw3(w *app.Window) error {
 	type C = layout.Context
 	type D = layout.Dimensions
 
@@ -49,24 +54,24 @@ func Draw1(w *app.Window) error {
 	var boiling bool
 	// th defnes the material design style
 	th := material.NewTheme(gofont.Collection())
-
+	lineEditor := &widget.Editor{
+		SingleLine: true,
+		Submit:     true,
+	}
+	editor := new(widget.Editor)
 	// listen for events in the window.
 	//
-	var textBox widget.Editor
 	//var scrollBox widget.Scrollbar
 	var tweetInput component.TextField
 	var alg layout.Alignment
 	var list widget.List
-	// type animation struct {
-	// 	start    time.Time
-	// 	duration time.Duration
-	// }
 	list1 := &widget.List{
 		List: layout.List{
 			Axis: layout.Vertical,
 		},
 	}
 	list.AddDrag(&ops)
+	xd := 40
 	//var list2 widget.Image
 	for {
 		select {
@@ -82,15 +87,10 @@ func Draw1(w *app.Window) error {
 				// ...
 				gtx := layout.NewContext(&ops, e)
 
-				// Let's try out the flexbox layout concept
 				if startButton.Clicked() {
 
-					// Resetting the boil
-					//	if progress >= 1 {
 					progress = 0
-					//	}
-					// Read from the input box
-					//	if progress == 0 {
+
 					inputString := boilDurationInput.Text()
 					inputString = strings.TrimSpace(inputString)
 					inputFloat, _ := strconv.ParseFloat(inputString, 32)
@@ -109,30 +109,46 @@ func Draw1(w *app.Window) error {
 				// 	//Spacing: layout,
 				// }.Layout(gtx,
 				widgets := []layout.Widget{
-					//	material.H3(th, "xxxxxxx").Layout,
+					material.H5(th, "ГО рисуем").Layout,
 					func(gtx C) D {
-						//	bar := material.ProgressBar(th, progress)
-
-						return material.List(th, &list).Layout(gtx, 100, func(gtx C, index int) D {
-							ed := material.Editor(th, &boilDurationInput, fmt.Sprintf(" - %d - ", index))
-							return ed.Layout(gtx)
-							// ed1 := ed.Layout(gtx)
-							// ed1.Size = image.Point{
-							// 	X: 80,
-							// 	Y: 50,
-							// }
-							// return ed1
-
+						gtx.Constraints.Max.Y = gtx.Px(unit.Dp(100))
+						return material.Editor(th, editor, "Hint").Layout(gtx)
+					},
+					//	layout.SpaceSides,
+					//
+					func(gtx C) D {
+						e := material.Editor(th, lineEditor, "Hint")
+						e.Font.Style = text.Italic
+						border := widget.Border{Color: color.NRGBA{A: 0xff}, CornerRadius: unit.Dp(8), Width: unit.Px(2)}
+						return border.Layout(gtx, func(gtx C) D {
+							return layout.UniformInset(unit.Dp(8)).Layout(gtx, e.Layout)
 						})
+					},
+					//! круг
+					func(gtx C) D {
+						radius := float32(40)
+						if xd > gtx.Constraints.Max.X-40 {
+							xd = 40
+							time.Sleep(time.Microsecond * 100)
+						}
+						xd++
+						op.InvalidateOp{}.Add(gtx.Ops)
+						log.Println(xd)
+						circle := clip.Circle{
+							// Hard coding the x coordinate. Try resizing the window
+							//Center: f32.Point{X: 40, Y: 40},
+							// Soft coding the x coordinate. Try resizing the window
+							//Center: f32.Point{X: float32(gtx.Constraints.Max.X) / 2, Y: 40}, // по центру
+							Center: f32.Point{X: float32(xd), Y: 40}, // по центру
+							Radius: radius,
+						}.Op(gtx.Ops)
+						color := color.NRGBA{R: 200, A: 255}
+						paint.FillShape(gtx.Ops, color, circle)
 
+						d := image.Point{Y: int(radius * 2)}
+						return layout.Dimensions{Size: d}
 					},
 					func(gtx C) D {
-						margins := layout.Inset{
-							Top:    unit.Dp(10),
-							Right:  unit.Dp(10),
-							Bottom: unit.Dp(10),
-							Left:   unit.Dp(10),
-						}
 						if tweetInput.TextTooLong() {
 							tweetInput.SetError("Too many characters")
 						} else {
@@ -141,75 +157,13 @@ func Draw1(w *app.Window) error {
 						tweetInput.CharLimit = 128
 						tweetInput.Helper = "Твиты содержат ограниченное количество символов"
 						tweetInput.Alignment = alg
-						return margins.Layout(gtx,
-							func(gtx C) D {
-								return tweetInput.Layout(gtx, th, "Текст")
-							},
-						)
+						// return layout.UniformInset(unit.Dp(18)).Layout(gtx, func(gtx C) D {
+						// 	return tweetInput.Layout(gtx, th, "Текст")
+						// })
+
+						return tweetInput.Layout(gtx, th, "Текст")
 
 					},
-					func(gtx C) D {
-						textBox.SingleLine = false
-						textBox.Alignment = text.Start
-
-						//textBox.SetText("Тест\nда")
-						// Define insets ...
-						margins := layout.Inset{
-							Top:    unit.Dp(10),
-							Right:  unit.Dp(10),
-							Bottom: unit.Dp(10),
-							Left:   unit.Dp(10),
-						}
-						margins2 := layout.Inset{
-							Top:    unit.Dp(10),
-							Right:  unit.Dp(10),
-							Bottom: unit.Dp(10),
-							Left:   unit.Dp(10),
-						}
-
-						// ... and borders ...
-						border := widget.Border{
-							Color:        color.NRGBA{R: 204, G: 204, B: 204, A: 255},
-							CornerRadius: unit.Dp(3),
-							Width:        unit.Dp(2),
-						}
-						// ... and material design ...
-						ed := material.Editor(th, &textBox, "Введите текст")
-
-						obj := margins.Layout(gtx, // в margin
-							func(gtx C) D { // вставляем border
-								//layoutWidget(gtx, 150, 150)
-								return border.Layout(gtx,
-									func(gtx C) D { // в border вставляем margin и элемент
-										return margins2.Layout(gtx,
-											func(gtx C) D {
-												return ed.Layout(gtx)
-											},
-										)
-									},
-								)
-							},
-						)
-						//obj.Size.Add(image.Point{Y: 150})
-						return obj
-					},
-
-					// layout.Rigid(
-					// 	//! круг
-					// 	func(gtx C) D {
-					// 		circle := clip.Circle{
-					// 			// Hard coding the x coordinate. Try resizing the window
-					// 			Center: f32.Point{X: 200, Y: 200},
-					// 			// Soft coding the x coordinate. Try resizing the window
-					// 			// Center: f32.Point{X: float32(gtx.Constraints.Max.X) / 2, Y: 200},
-					// 			Radius: 120,
-					// 		}.Op(gtx.Ops)
-					// 		color := color.NRGBA{R: 200, A: 255}
-					// 		paint.FillShape(gtx.Ops, color, circle)
-					// 		d := image.Point{Y: 500}
-					// 		return layout.Dimensions{Size: d}
-					// 	},
-					// ),
 					// The inputbox
 
 					func(gtx C) D {
@@ -230,7 +184,7 @@ func Draw1(w *app.Window) error {
 						margins := layout.Inset{
 							Top:    unit.Dp(0),
 							Right:  unit.Dp(170),
-							Bottom: unit.Dp(40),
+							Bottom: unit.Dp(10),
 							Left:   unit.Dp(170),
 						}
 						// ... and borders ...
@@ -311,7 +265,7 @@ func Draw1(w *app.Window) error {
 							// cp := material.Caption(th, "пусто")
 							// return cp.Layout(gtx)
 							return material.List(th, list1).Layout(gtx, len(widgets), func(gtx C, i int) D {
-								return layout.UniformInset(unit.Dp(10)).Layout(gtx, widgets[i]) // тут margin 10???
+								return layout.UniformInset(unit.Dp(10)).Layout(gtx, widgets[i]) // UniformInset общий margin 10???
 							})
 						})),
 					// обычный flex по размеру компонента

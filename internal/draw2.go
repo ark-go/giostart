@@ -17,11 +17,13 @@ import (
 
 // type C = layout.Context
 // type D = layout.Dimensions
-const oneThird float32 = 1.0 / 3.0
+//const oneThird float32 = 1.0 / 3.0
 
 func Draw2(w *app.Window) error {
 	//var curs cursor = "pointer"
-
+	type C = layout.Context
+	type D = layout.Dimensions
+	const oneThird float32 = 1.0 / 3.0
 	th := material.NewTheme(gofont.Collection())
 	var (
 		increaseBtn, decreaseBtn widget.Clickable
