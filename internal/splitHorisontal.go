@@ -123,12 +123,6 @@ func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dim
 		paint.ColorOp{Color: color.NRGBA{R: 0x20, G: 0x20, B: 0x20, A: 0xFF}}.Add(gtx.Ops)
 		paint.PaintOp{}.Add(gtx.Ops)
 		// end test
-		// определим область для мышки? тут она уже меньше :)
-		// pointer.Rect(barRect).Add(gtx.Ops)
-		// pointer.InputOp{Tag: s,
-		// 	Types: pointer.Press | pointer.Drag | pointer.Release, // только для этих событий
-		// 	Grab:  s.drag,
-		// }.Add(gtx.Ops)
 
 		//! так установим курсор для перетаскивания
 		pointer.CursorNameOp{Name: pointer.CursorColResize}.Add(gtx.Ops)

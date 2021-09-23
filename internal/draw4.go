@@ -5,8 +5,10 @@ import (
 	"image/color"
 	"log"
 	"runtime"
+	"time"
 
 	"gioui.org/app"
+	"gioui.org/f32"
 	"gioui.org/font/gofont"
 	"gioui.org/io/key"
 	"gioui.org/io/pointer"
@@ -35,9 +37,21 @@ type page struct {
 	scrollY float32
 	icon    *widget.Icon
 	split   *Split
+	on      bool
 }
 
+var progress float32
+
 func Draw4(w *app.Window) error {
+	progress = -100
+	progressIncrementer := make(chan bool)
+	go func() {
+		for {
+			//time.Sleep(time.Second / 25) // уменьшает нагрузку, меньше перерисовка экрана
+			time.Sleep(time.Microsecond * 1300)
+			progressIncrementer <- true
+		}
+	}()
 	// иконка для кнопки
 	ic, err := widget.NewIcon(icons.CommunicationCall)
 	if err != nil {
@@ -50,6 +64,7 @@ func Draw4(w *app.Window) error {
 	// y-position for red highlight bar
 	var highlightY float32 = 78
 	Page := page{}
+	//Page.gtx = &layout.Context{}
 	Page.icon = icon
 	Page.list = &widget.List{
 		//Scrollbar: widget.Scrollbar{},
@@ -96,11 +111,12 @@ func Draw4(w *app.Window) error {
 			// Это отправляется, когда приложение должно повторно выполнить рендеринг.
 			case system.FrameEvent:
 				Page.gtx = layout.NewContext(Page.ops, e)
+				Page.on = true
 				//log.Println("start", Page.gtx)
 				Page.render()
-				draw1a(Page.gtx.Ops)
+				draw1a(Page.gtx.Ops, time.Now())
 				draw1b(Page.gtx.Ops)
-
+				drawProgressBar(Page.gtx.Ops, time.Now())
 				e.Frame(Page.gtx.Ops) // Отрисовываем, без этого не рисует
 			case system.DestroyEvent:
 				return e.Err
@@ -116,6 +132,16 @@ func Draw4(w *app.Window) error {
 				}
 				//	default:
 				//		log.Println("gtx", Page.gtx.Constraints.Min.X, Page.gtx.Constraints.Max.X,Page.gtx.Constraints.Min.Y,Page.gtx.Constraints.Max.Y)
+			}
+		case <-progressIncrementer:
+			if Page.on {
+				//log.Println("рисуем ква")
+				//draw1a(Page.gtx.Ops, Page.gtx)
+				progress += 1 //1.0 / 25.0 / boilDuration
+				//	draw1a(Page.gtx.Ops, Page.gtx)
+				//op.InvalidateOp{}.Add(Page.ops)
+				//op.InvalidateOp{At: Page.gtx.Now.Add(time.Second / 25)}.Add(Page.ops)
+				//w.Invalidate()
 			}
 		}
 
@@ -149,6 +175,7 @@ func (p *page) render() {
 			}.Op()
 			// красим
 			paint.FillShape(p.ops, color.NRGBA{R: 0x22, G: 0xff, B: 0xf0, A: 0xff}, background)
+
 			return material.Editor(p.th, p.editor, "Hint").Layout(gtx)
 		},
 		// ну обычный текст Llabel
@@ -363,11 +390,34 @@ func (b iconAndTextButton) Layout(gtx layout.Context) layout.Dimensions {
 	return dims
 }
 
-func draw1a(ops *op.Ops) {
+func draw1a(ops *op.Ops, now time.Time) {
+	elapsed := now.Sub(startTime)
+	progress := elapsed.Seconds() / duration.Seconds()
+	if progress < 1 {
+		// The progress bar hasn’t yet finished animating.
+		op.InvalidateOp{}.Add(ops)
+	} else {
+		elapsed := time.Now().Sub(time.Now()) // time.Since(startTime) //
+		//elapsed := now.Sub(startTime)
+		progress = elapsed.Seconds() / duration.Seconds()
+		op.InvalidateOp{}.Add(ops)
+	}
+
+	// if progress > float32(1000) {
+	// 	progress = -100
+	// }
+	// op.InvalidateOp{}.Add(ops)
 	defer op.Save(ops).Load()
-	clip.Rect{Min: image.Pt(20, 30), Max: image.Pt(100, 100)}.Add(ops)
+
+	_ = f32.Pt(float32(progress), 30)
+	width := 1000 * float32(progress)
+	// смещает координаты для следущего рисования
+	op.Offset(f32.Pt(float32(width), 30)).Add(ops)                     // смещает координаты для следущего рисования
+	clip.Rect{Min: image.Pt(30, 30), Max: image.Pt(100, 600)}.Add(ops) // из нулевой точки, будет размещен по Offset
 	paint.ColorOp{Color: color.NRGBA{R: 0x80, A: 0xFF}}.Add(ops)
 	paint.PaintOp{}.Add(ops)
+	//op.InvalidateOp{At: gtx.Now.Add(time.Second * 5)}.Add(ops)
+
 }
 func draw1b(ops *op.Ops) {
 	defer op.Save(ops).Load()
@@ -382,4 +432,27 @@ func MaxParallelism() int {
 		return maxProcs
 	}
 	return numCPU
+}
+
+var startTime = time.Now()
+var duration = 10 * time.Second
+
+func drawProgressBar(ops *op.Ops, now time.Time) {
+	// Calculate how much of the progress bar to draw,
+	// based on the current time.
+	elapsed := now.Sub(startTime)
+	progress := elapsed.Seconds() / duration.Seconds()
+	if progress < 1 {
+		// The progress bar hasn’t yet finished animating.
+		op.InvalidateOp{}.Add(ops)
+	} else {
+		progress = 1
+	}
+
+	defer op.Save(ops).Load()
+	width := 600 * float32(progress)
+	clip.Rect{Max: image.Pt(int(width), 20)}.Add(ops)
+	paint.ColorOp{Color: color.NRGBA{R: 0x80, A: 0xFF}}.Add(ops)
+	paint.ColorOp{Color: color.NRGBA{G: 0x80, A: 0xFF}}.Add(ops)
+	paint.PaintOp{}.Add(ops)
 }
