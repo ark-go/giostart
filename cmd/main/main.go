@@ -20,6 +20,7 @@ type D = layout.Dimensions
 // var progressIncrementer chan bool
 
 func main() {
+	//e := make(chan struct{})
 	log.Println("Версия: ", versionProg)
 	// Setup a separate channel to provide ticks to increment progress
 	// progressIncrementer = make(chan bool)
@@ -29,21 +30,26 @@ func main() {
 	// 		progressIncrementer <- true
 	// 	}
 	// }()
+	// The ui loop is separated from the application window creation
+	// such that it can be used for testing.
+
 	go func() {
 		// create new window
 		w := app.NewWindow(
 			app.Title("Написано на GO"),
 			app.Size(unit.Dp(400), unit.Dp(600)), //  x-y
-			app.MinSize(unit.Dp(200), unit.Dp(300)),
+			app.MinSize(unit.Dp(200), unit.Dp(100)),
+
 			// MaxSize MinSize Both
 		)
 
-		if err := internal.Draw3(w); err != nil {
+		if err := internal.Draw4(w); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
 	}()
 	app.Main()
+	//	os.Exit(0)
 }
 
 // func layoutWidget(ctx layout.Context, width, height int) layout.Dimensions {
