@@ -32,6 +32,7 @@ func main() {
 	// }()
 	// The ui loop is separated from the application window creation
 	// such that it can be used for testing.
+	internal.InitPage()
 
 	go func() {
 		// create new window
@@ -43,7 +44,8 @@ func main() {
 			// MaxSize MinSize Both
 		)
 
-		if err := internal.Draw4(w); err != nil {
+		if err := internal.Page.Draw(w); err != nil {
+			//if err := internal.Draw4(w); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
