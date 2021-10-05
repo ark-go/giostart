@@ -1,13 +1,14 @@
 package main
 
 import (
+	"image/color"
 	"log"
 	"os"
 
 	"gioui.org/app"
 	"gioui.org/layout"
 	"gioui.org/unit" // (dp,sp,px) реализует независимые от устройства единицы и значения? dp
-	"github.com/ark-go/giostart/internal"
+	"github.com/ark-go/giostart/internal/page"
 )
 
 var versionProg string
@@ -32,19 +33,23 @@ func main() {
 	// }()
 	// The ui loop is separated from the application window creation
 	// such that it can be used for testing.
-	internal.InitPage()
+	//page.InitPage()
 
 	go func() {
 		// create new window
 		w := app.NewWindow(
-			app.Title("Написано на GO"),
+			app.Title("Написано на GO ("+versionProg+")"),
 			app.Size(unit.Dp(400), unit.Dp(600)), //  x-y
 			app.MinSize(unit.Dp(200), unit.Dp(100)),
+			app.StatusColor(color.NRGBA{G: 0xff, A: 0xff}),
+			app.NavigationColor(color.NRGBA{R: 0xff, A: 0xff}),
+			app.AnyOrientation.Option(),
 
 			// MaxSize MinSize Both
 		)
 
-		if err := internal.Page.Draw(w); err != nil {
+		mainPage := page.CreatePage()
+		if err := mainPage.Draw(w); err != nil {
 			//if err := internal.Draw4(w); err != nil {
 			log.Fatal(err)
 		}

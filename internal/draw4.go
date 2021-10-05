@@ -20,6 +20,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/ark-go/giostart/internal/split"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 )
 
@@ -36,7 +37,7 @@ type page struct {
 	colOn   bool
 	scrollY float32
 	icon    *widget.Icon
-	split   *Split
+	split   *split.Split
 	on      bool
 }
 
@@ -82,7 +83,7 @@ func Draw4(w *app.Window) error {
 	Page.editor = new(widget.Editor)
 	Page.th = material.NewTheme(gofont.Collection())
 	Page.editor.SetText(texttest)
-	Page.split = &Split{}
+	Page.split = &split.Split{}
 	log.Println("Процессоров:", runtime.NumCPU())
 	log.Println("Проц:", MaxParallelism())
 	for {

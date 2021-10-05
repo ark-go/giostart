@@ -1,0 +1,17 @@
+module github.com/ark-go/giostart
+
+go 1.17
+
+require (
+	gioui.org v0.0.0-20210924104810-868ea76acfdd
+	gioui.org/x v0.0.0-20210915201858-6e7db83bff59
+	golang.org/x/exp v0.0.0-20210916165020-5cb4fee858ee
+)
+
+require (
+	gioui.org/cpu v0.0.0-20210817075930-8d6a761490d2 // indirect
+	gioui.org/shader v1.0.4 // indirect
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
+	golang.org/x/sys v0.0.0-20210923061019-b8560ed6a9b7 // indirect
+	golang.org/x/text v0.3.7 // indirect
+)
