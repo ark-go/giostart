@@ -24,7 +24,7 @@ buildwasm:
 
 buildandroid:
 	$(info +Компиляция Android)
-	ANDROID_SDK_ROOT=/home/arkadii/Android/Sdk/ go run gioui.org/cmd/gogio -ldflags "-s -w -X 'main.versionProg=$$($(version))'" -o ./bin/main/giostart.apk -target android -arch arm64 -appid Go.arkiv cmd/main/main.go
+	ANDROID_SDK_ROOT=/home/arkadii/Android/Sdk/ go run gioui.org/cmd/gogio -ldflags "-s -w -X 'main.versionProg=$$($(version))'" -o ./bin/main/giostart.apk -target android -icon appicon.png -arch arm64 -appid Go.arkiv cmd/main/main.go
 
 run: buildlinux buildwin 
 	$(info +Запуск)

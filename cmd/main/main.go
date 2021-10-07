@@ -38,12 +38,12 @@ func main() {
 	go func() {
 		// create new window
 		w := app.NewWindow(
-			app.Title("Написано на GO ("+versionProg+")"),
-			app.Size(unit.Dp(400), unit.Dp(600)), //  x-y
+			app.Title("Написано на GO ("+versionProg+")"), // windows
+			app.Size(unit.Dp(700), unit.Dp(600)),          //  x-y  windows
 			app.MinSize(unit.Dp(200), unit.Dp(100)),
-			app.StatusColor(color.NRGBA{G: 0xff, A: 0xff}),
-			app.NavigationColor(color.NRGBA{R: 0xff, A: 0xff}),
-			app.AnyOrientation.Option(),
+			app.StatusColor(color.NRGBA{G: 0xff, A: 0xff}),     // андроид верх статусная строка
+			app.NavigationColor(color.NRGBA{R: 0xff, A: 0xff}), // андроид кнопки в низу
+			app.AnyOrientation.Option(),                        // поворачивается экран гиро
 
 			// MaxSize MinSize Both
 		)

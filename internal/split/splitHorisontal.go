@@ -1,3 +1,4 @@
+// Откладываем в долгий ящик
 package split
 
 import (
