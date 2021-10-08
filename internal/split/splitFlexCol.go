@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"time"
 
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -33,9 +34,9 @@ type SplitFlexCol struct {
 	// для установки в процентах левого поля использовать LeftPanelWidth
 	Ratio float32
 	//  ширина для изменения размера макета.
-	BarSize        int
-	barSizeCurrent int
-	barSizeEnter   int
+	BarSize        float32
+	barSizeCurrent float32
+	barSizeEnter   float32
 	BarColor       color.NRGBA
 	BarCenterColor color.NRGBA
 	// выступ ручки
@@ -48,7 +49,7 @@ type SplitFlexCol struct {
 	drag            bool
 	dragID          pointer.ID
 	dragX           float32
-	initVal         bool // чтоб инициализацию использовать один раз
+	initVal         bool // чтоб инициализацию использовать один раз, если она в потоке
 	//
 	Color color.NRGBA
 	// ?клавиша нажата
@@ -57,6 +58,11 @@ type SplitFlexCol struct {
 	leftSize int
 	// процент заданный при инициализации
 	startLeftSize int
+	//-----------------
+	startTime time.Time
+	duration  time.Duration
+	enter     bool
+	leave     bool
 }
 
 func (s *SplitFlexCol) Init(leftProcent int, barWidth int) {
@@ -66,9 +72,11 @@ func (s *SplitFlexCol) Init(leftProcent int, barWidth int) {
 	if barWidth < 0 {
 		barWidth = 0
 	}
-	s.BarSize = barWidth //gtx.Px(unit.Value(float32(barWidth)))
-	s.barSizeCurrent = barWidth
-	s.barSizeEnter = barWidth + 6
+	s.startTime = time.Now()
+	s.duration = 300 * time.Millisecond
+	s.BarSize = float32(barWidth) //gtx.Px(unit.Value(float32(barWidth)))
+	s.barSizeCurrent = float32(barWidth)
+	s.barSizeEnter = 6
 	s.BarCenterColor = color.NRGBA{R: 0x20, G: 0x20, B: 0x20, A: 0xFF}
 	s.BarColor = color.NRGBA{R: 0xc3, G: 0xc3, B: 0xc3, A: 0xFF}
 	s.BarKnobLedg = barWidth + 6
@@ -102,7 +110,9 @@ func (s *SplitFlexCol) LeftPanelWidth(p int) {
 func intToPx(gtx C, v int) int {
 	return gtx.Px(unit.Dp(float32(v)))
 }
-
+func floatToPx(gtx C, v float32) int {
+	return gtx.Px(unit.Dp(v))
+}
 func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[]layout.FlexChild) layout.Dimensions {
 	{
 		stack := op.Save(gtx.Ops)
@@ -142,10 +152,19 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 				s.Ratio += deltaRatio
 				log.Println("Ratio", s.Ratio)
 			case pointer.Enter:
-				s.barSizeCurrent = s.barSizeEnter
+				//s.barSizeCurrent = s.barSizeEnter
+				if !s.enter {
+					s.startTime = time.Now()
+					s.enter = true
+					s.leave = false
+				}
 			case pointer.Leave:
-				s.barSizeCurrent = s.BarSize
-				log.Println("leave")
+				//s.barSizeCurrent = s.BarSize
+				if !s.leave {
+					s.startTime = time.Now()
+					s.leave = true
+					s.enter = false
+				}
 			case pointer.Release:
 				// отпустили кнопку
 				s.pressed = false
@@ -165,17 +184,18 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 		if s.leftSize < 0 {
 			s.leftSize = 0
 		}
-		if s.leftSize+intToPx(gtx, s.barSizeCurrent) > gtx.Constraints.Max.X {
-			s.leftSize = gtx.Constraints.Max.X - intToPx(gtx, s.barSizeCurrent)
+		// справа
+		if s.leftSize+floatToPx(gtx, s.barSizeCurrent) > gtx.Constraints.Max.X {
+			s.leftSize = gtx.Constraints.Max.X - floatToPx(gtx, s.barSizeCurrent)
 		}
 	}
 	{ // Установка области отслеживания мышки, и нужных нам событий
 		stack := op.Save(gtx.Ops)
 		// Ограничьте область для событий указателя.
-		pointer.Rect(image.Rect(s.leftSize, 0, s.leftSize+intToPx(gtx, s.barSizeCurrent), gtx.Constraints.Min.Y)).Add(gtx.Ops)
+		pointer.Rect(image.Rect(s.leftSize, 0, s.leftSize+floatToPx(gtx, s.barSizeCurrent), gtx.Constraints.Min.Y)).Add(gtx.Ops)
 		// На что реагировать
 		pointer.InputOp{
-			Tag:   s,                                                                              // просто индентификатор события, не обязательно s
+			Tag:   s,                                                                              // просто индентификатор области события, не обязательно s
 			Types: pointer.Press | pointer.Release | pointer.Drag | pointer.Enter | pointer.Leave, // какие события мышки хотим, лишних нам не надо
 			Grab:  s.drag,                                                                         // что-то тянем
 		}.Add(gtx.Ops)
@@ -215,7 +235,7 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 		// нужно зарезервировать место, чтоб раздвинуть панели
 		// а рисовать будем сами по координатам, TODO:
 		layout.Rigid(func(gtx C) D {
-			gtx.Constraints.Max.X = intToPx(gtx, s.barSizeCurrent)
+			gtx.Constraints.Max.X = floatToPx(gtx, s.barSizeCurrent)
 			return s.Layout2(gtx)
 		}),
 		// правая сторона
@@ -248,9 +268,66 @@ func (s *SplitFlexCol) Layout2(gtx C) D {
 	clip.Rect{Min: barRect.Min, Max: barRect.Max}.Add(gtx.Ops)
 	paint.ColorOp{Color: s.BarColor}.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
+	//---------------- //! анимация увеличение!
+	if s.enter {
+		elapsed := time.Since(s.startTime) // это заменяет конструкцию  time.Now().Sub(s.startTime)  длительность duration  ( time.Now() - s.startTime )
+		progress := elapsed.Seconds() / s.duration.Seconds()
+		k := s.barSizeEnter * float32(progress) // s.barSizeEnter (6) какую цифру мы хотим получить в конце анимации
+		if k > 2.5 {                            // задержка на пролет мышки, не реагировать если мышка не задержалась дольше
+			s.barSizeCurrent = s.BarSize + k
+		}
+		if progress < 1 {
+			// Индикатор выполнения еще не закончил анимироваться.
+			op.InvalidateOp{}.Add(gtx.Ops)
+		} else {
+			progress = 1
+			s.enter = false
+		}
+	}
+	//---------------- //! анимация уменьшение ушла мышка
+	if s.leave {
+		elapsed := time.Since(s.startTime) // это заменяет конструкцию  time.Now().Sub(s.startTime)
+		progress := elapsed.Seconds() / s.duration.Seconds()
+		k := s.barSizeEnter * float32(progress)
+		//log.Println(":::::::::::::::::::::::::", k)
+		if k > 2.5 { // задержка на пролет мышки без остановки
+			if ((s.BarSize + s.barSizeEnter) - k) < s.barSizeCurrent { // реагируем только на уменьшение текущего размера
+				s.barSizeCurrent = (s.BarSize + s.barSizeEnter) - k
+			}
+		}
+		if progress < 1 {
+			// Индикатор выполнения еще не закончил анимироваться.
+			op.InvalidateOp{}.Add(gtx.Ops)
+		} else {
+			progress = 1
+			s.leave = false
+		}
+	}
+	//--------------
 	return dims
 }
 
+// func (s *SplitFlexCol) drawProgressBar(ops *op.Ops, now time.Time) {
+// 	// Calculate how much of the progress bar to draw,
+// 	// based on the current time.
+// 	elapsed := now.Sub(s.startTime)
+// 	progress := elapsed.Seconds() / s.duration.Seconds()
+// 	if progress < 1 {
+// 		// The progress bar hasn’t yet finished animating.
+// 		op.InvalidateOp{}.Add(ops)
+// 	} else {
+// 		progress = 1
+// 	}
+
+// 	defer op.Save(ops).Load()
+// 	width := 200 * float32(progress)
+
+// 	clip.Rect{Max: image.Pt(int(width), 50)}.Add(ops)
+// 	log.Println("anim rect")
+// 	paint.ColorOp{Color: color.NRGBA{R: 0x80, A: 0xFF}}.Add(ops)
+// 	paint.ColorOp{Color: color.NRGBA{G: 0x80, A: 0xFF}}.Add(ops)
+// 	paint.PaintOp{}.Add(ops)
+// }
 func (s *SplitFlexCol) Layout4(gtx layout.Context) layout.Dimensions {
 
 	dims := D{Size: gtx.Constraints.Max} // максимальная ширина разделителя

@@ -29,7 +29,6 @@ func (p *TmainPage) Render() {
 			func(gtx C) D {
 				splitFlex.Init(40, 10)
 				dims := splitFlex.Layout(gtx, leftList, rightList)
-				log.Println("itog", dims.Size)
 				return dims //D{Size: image.Pt(50, 100)}
 			}),
 		// layout.Flexed(1, layout.Widget( // флекс заполняет все оставшеееся пространство

@@ -62,7 +62,7 @@ func (p *TmainPage) initMainList() {
 								// 	})
 								splitFlex.Init(40, 5)
 								dims := splitFlex.Layout(gtx, leftList, rightList)
-								log.Println("itog", dims.Size)
+
 								return dims //D{Size: image.Pt(50, 100)}
 							}),
 						)
