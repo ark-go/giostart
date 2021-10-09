@@ -1,6 +1,7 @@
 /**
 * https://github.com/ark-go/giostart
 *
+*
  */
 package split
 
@@ -16,6 +17,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
+	"gioui.org/widget"
 )
 
 type C = layout.Context
@@ -23,7 +25,9 @@ type D = layout.Dimensions
 type InsetPanel struct {
 	Top, Right, Bottom, Left unit.Value
 }
+
 type SplitFlexCol struct {
+	scr widget.Scrollbar
 	// структура отступов для всех сторон
 	// если не задана берется из InsetDefault
 	InsetPanel *InsetPanel
@@ -66,6 +70,7 @@ type SplitFlexCol struct {
 }
 
 func (s *SplitFlexCol) Init(leftProcent int, barWidth int) {
+	s.scr = widget.Scrollbar{}
 	if s.initVal {
 		return
 	}
@@ -115,7 +120,7 @@ func floatToPx(gtx C, v float32) int {
 }
 func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[]layout.FlexChild) layout.Dimensions {
 	{
-		stack := op.Save(gtx.Ops)
+		//	stack := op.Save(gtx.Ops)
 		for _, ev := range gtx.Events(s) {
 			e, ok := ev.(pointer.Event)
 			if !ok {
@@ -174,7 +179,7 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 				s.drag = false
 			}
 		}
-		stack.Load()
+		//	stack.Load()
 	}
 
 	{ // расчет ширины левого поля
@@ -190,9 +195,9 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 		}
 	}
 	{ // Установка области отслеживания мышки, и нужных нам событий
-		stack := op.Save(gtx.Ops)
+		//stack := op.Save(gtx.Ops)
 		// Ограничьте область для событий указателя.
-		pointer.Rect(image.Rect(s.leftSize, 0, s.leftSize+floatToPx(gtx, s.barSizeCurrent), gtx.Constraints.Min.Y)).Add(gtx.Ops)
+		stack := pointer.Rect(image.Rect(s.leftSize, 0, s.leftSize+floatToPx(gtx, s.barSizeCurrent), gtx.Constraints.Min.Y)).Push(gtx.Ops)
 		// На что реагировать
 		pointer.InputOp{
 			Tag:   s,                                                                              // просто индентификатор области события, не обязательно s
@@ -201,7 +206,7 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 		}.Add(gtx.Ops)
 		// так установим вид курсора для перетаскивания
 		pointer.CursorNameOp{Name: pointer.CursorColResize}.Add(gtx.Ops)
-		stack.Load()
+		stack.Pop()
 	}
 	//------------ этот блок будем отдавать ------------------------------------
 	// Формируем наш виджет
@@ -239,6 +244,7 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 			return s.Layout2(gtx)
 		}),
 		// правая сторона
+
 		layout.Rigid(func(gtx C) D {
 			s.setBackground(gtx, s.BackgroundRight) // закрашиваем фон чтоб не был прозрачным
 			return inset.Layout(gtx, func(gtx C) D {
@@ -246,6 +252,10 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 					Axis: layout.Vertical,
 				}.Layout(gtx, *childrenRight...) // детки
 			})
+			//	dim := s.scr.Layout(gtx, layout.Vertical, 0.25, 1)
+			//	log.Println("sssssscr", dim.Size)
+			//	return widgets.ScrollWidget.Layout(gtx, widgets.ScrollList)
+
 		}),
 	)
 	s.Layout4(gtx) // :)  да, можно рисовать и после
@@ -265,9 +275,10 @@ func (s *SplitFlexCol) Layout2(gtx C) D {
 
 	barRect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
 	// создадим clip чтоб закрасить цветом
-	clip.Rect{Min: barRect.Min, Max: barRect.Max}.Add(gtx.Ops)
+	stack := clip.Rect{Min: barRect.Min, Max: barRect.Max}.Push(gtx.Ops)
 	paint.ColorOp{Color: s.BarColor}.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
+	stack.Pop()
 	//---------------- //! анимация увеличение!
 	if s.enter {
 		elapsed := time.Since(s.startTime) // это заменяет конструкцию  time.Now().Sub(s.startTime)  длительность duration  ( time.Now() - s.startTime )
@@ -303,31 +314,11 @@ func (s *SplitFlexCol) Layout2(gtx C) D {
 			s.leave = false
 		}
 	}
+
 	//--------------
 	return dims
 }
 
-// func (s *SplitFlexCol) drawProgressBar(ops *op.Ops, now time.Time) {
-// 	// Calculate how much of the progress bar to draw,
-// 	// based on the current time.
-// 	elapsed := now.Sub(s.startTime)
-// 	progress := elapsed.Seconds() / s.duration.Seconds()
-// 	if progress < 1 {
-// 		// The progress bar hasn’t yet finished animating.
-// 		op.InvalidateOp{}.Add(ops)
-// 	} else {
-// 		progress = 1
-// 	}
-
-// 	defer op.Save(ops).Load()
-// 	width := 200 * float32(progress)
-
-// 	clip.Rect{Max: image.Pt(int(width), 50)}.Add(ops)
-// 	log.Println("anim rect")
-// 	paint.ColorOp{Color: color.NRGBA{R: 0x80, A: 0xFF}}.Add(ops)
-// 	paint.ColorOp{Color: color.NRGBA{G: 0x80, A: 0xFF}}.Add(ops)
-// 	paint.PaintOp{}.Add(ops)
-// }
 func (s *SplitFlexCol) Layout4(gtx layout.Context) layout.Dimensions {
 
 	dims := D{Size: gtx.Constraints.Max} // максимальная ширина разделителя
@@ -339,17 +330,19 @@ func (s *SplitFlexCol) Layout4(gtx layout.Context) layout.Dimensions {
 
 	barRect := image.Rect(10, 0, 40, 50)
 	// создадим clip чтоб закрасить цветом
-	clip.Rect{Min: barRect.Min, Max: barRect.Max}.Add(gtx.Ops)
+	stack := clip.Rect{Min: barRect.Min, Max: barRect.Max}.Push(gtx.Ops)
 	paint.ColorOp{Color: color.NRGBA{R: 0xFF, A: 0xFF}}.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
+	stack.Pop()
 	return dims
 }
 
 func (s *SplitFlexCol) setBackground(gtx C, col color.NRGBA) {
 	barRect := image.Rect(0, 0, gtx.Constraints.Max.X, gtx.Constraints.Min.Y)
-	clip.Rect{Min: barRect.Min, Max: barRect.Max}.Add(gtx.Ops)
+	stack := clip.Rect{Min: barRect.Min, Max: barRect.Max}.Push(gtx.Ops)
 	paint.ColorOp{Color: col}.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
+	stack.Pop()
 	//return dims
 }
 
@@ -374,3 +367,73 @@ func (s *SplitFlexCol) setBackground(gtx C, col color.NRGBA) {
 // )
 // Рисуем разделитель
 //stack := op.Save(gtx.Ops)
+
+/*
+Hey all, scrollbars are officially available in core gio! Additionally, I've added a material.List that automatically integrates a scrollbar with the existing layout.List that you know and love.
+To use these lists instead of layout.List, callers simply need to
+change declarations of layout.List to widget.List, and to change
+calls to layout.List.Layout to material.List(th,&list).Layout.
+So this:
+    var list layout.List
+    list.Layout(gtx, 10, func(gtx C, index int) D {
+        return material.Body1(th, fmt.Sprintf("%d", index)).Layout(gtx)
+    })
+Becomes:
+    var list widget.List
+    material.List(th, &list).Layout(gtx, 10, func(gtx C, index int) D {
+        return material.Body1(th, fmt.Sprintf("%d", index)).Layout(gtx)
+    })
+Naturally, the material.ListStyle type supports tweaking the scrollbar's
+appearance and behavior.
+Let me know what you think! All of the examples in https://git.sr.ht/~eliasnaur/gio-example have been updated to use the scrollbar as well.
+*/
+
+/*
+all: [API] split operation stack into per-state stacks
+
+The op.Save and Load methods exist to support the need for
+transformation, clip, pointer area state to behave as stacks. For
+example, layout needs to apply an offset to its children but not
+subsequent operations.
+
+Before this change, op.Save and Load was used to save and restore the
+state:
+
+    ops := new(op.Ops)
+    // Save state.
+    state := op.Save(ops)
+    // Apply offset.
+    op.Offset(...).Add(ops)
+    // Draw with offset applied.
+    draw(ops)
+    // Restore state.
+    state.Load()
+
+A drawback with the op.Save mechanism is that there is no direct
+connection between the state change and the saving and loading of state.
+This causes confusion as to when a Save/Load is needed and who is
+responsible for performing them, which leads to subtle bugs and over-use
+of Save/Loads.
+
+This change gets rid of the general state stack and replaces it with
+per-state stacks. There is now a stack for transformation, clip, pointer
+areas, and they can only be restored by the code pushing state to them.
+The example above now becomes:
+
+    ops := new(op.Ops)
+    // Push offset to the transformation stack.
+    stack := op.Offset(...).Push(ops)
+    // Draw with offset applied.
+    draw(ops)
+    // Restore state.
+    stack.Pop()
+
+Simple state such as the current material no longer has a way to be
+restored; it is assumed the client of a PaintOp adds their desired
+material operation before it.
+
+API change: replace op.Save/Load with explicit Push/Pop scopes for
+op.TransformOps, pointer.AreaOps, clip.Ops.
+
+Signed-off-by: Elias Naur <mail@eliasnaur.com>
+*/

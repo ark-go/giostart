@@ -192,7 +192,7 @@ func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dim
 		paint.ColorOp{Color: s.BarColor}.Add(gtx.Ops)
 		paint.PaintOp{}.Add(gtx.Ops)
 		// определим область для мышки
-		pointer.Rect(barRect).Add(gtx.Ops)
+		pointer.Rect(barRect).Push(gtx.Ops)
 		pointer.InputOp{Tag: s,
 			Types: pointer.Press | pointer.Drag | pointer.Release, // только для этих событий
 			Grab:  s.drag,
@@ -263,7 +263,7 @@ func (s *Split) Layout(gtx layout.Context, left, right layout.Widget) layout.Dim
 			// stack = op.Save(gtx.Ops)
 			// stack.Load()
 			// Добавим область для перетаскивания
-			pointer.Rect(barRect).Add(gtx.Ops)
+			pointer.Rect(barRect).Push(gtx.Ops)
 			//pointer.AreaOp{}.Add(gtx.Ops) // --------------------------------------------------
 			pointer.InputOp{Tag: s,
 				Types: pointer.Press | pointer.Drag | pointer.Release, // только для этих событий

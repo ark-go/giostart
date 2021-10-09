@@ -192,11 +192,11 @@ func (s *SplitV) Layout(gtx layout.Context, left, right layout.Widget) layout.Di
 
 		barRect := image.Rect(0, leftsize, gtxN.Constraints.Max.X, rightoffset)
 		// создадим clip чтоб закрасить цветом
-		clip.Rect{Min: barRect.Min, Max: barRect.Max}.Add(gtx.Ops)
+		clip.Rect{Min: barRect.Min, Max: barRect.Max}.Push(gtx.Ops)
 		paint.ColorOp{Color: s.BarColor}.Add(gtx.Ops)
 		paint.PaintOp{}.Add(gtx.Ops)
 		// определим область для мышки
-		pointer.Rect(barRect).Add(gtx.Ops)
+		pointer.Rect(barRect).Push(gtx.Ops)
 		pointer.InputOp{Tag: s,
 			Types: pointer.Press | pointer.Drag | pointer.Release, // только для этих событий
 			Grab:  s.drag,

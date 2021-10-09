@@ -96,5 +96,10 @@ func (p *TmainPage) initMainList() {
 				})
 		}),
 	}
+	// rightList2 = &[]layout.FlexChild{
+	// 	layout.Rigid(func(gtx C) D {
+	// 		return border.Layout(gtx, material.H3(p.Th, "right\n"+gtx.Constraints.Min.String()+"\n"+gtx.Constraints.Max.String()).Layout)
+	// 	}),
+	// }
 
 }

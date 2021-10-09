@@ -7,7 +7,6 @@ import (
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
@@ -23,7 +22,7 @@ type Border struct {
 
 func (b *Border) Layout(gtx layout.Context, w layout.Widget) layout.Dimensions {
 	// Avoid affecting the input tree with pointer events.
-	defer op.Save(gtx.Ops).Load()
+	//defer op.Save(gtx.Ops).Load()
 	dims := w(gtx)
 	//------------
 	// here we loop through all the events associated with this button.
@@ -38,7 +37,7 @@ func (b *Border) Layout(gtx layout.Context, w layout.Widget) layout.Dimensions {
 		}
 	}
 	// Confine the area for pointer events.
-	pointer.Rect(image.Rect(0, 0, dims.Size.X, dims.Size.Y)).Add(gtx.Ops)
+	stack := pointer.Rect(image.Rect(0, 0, dims.Size.X, dims.Size.Y)).Push(gtx.Ops)
 	//pointer.Rect(image.Rectangle{dims.Size.X,dims.Size.Y}.Add(gtx.Ops)
 	pointer.InputOp{
 		Tag:   b,
@@ -50,13 +49,20 @@ func (b *Border) Layout(gtx layout.Context, w layout.Widget) layout.Dimensions {
 	if b.pressed {
 		col = color.NRGBA{R: 0xFF, A: 0xFF}
 	}
-	return b.draw(gtx, w, col)
+	m := b.draw(gtx, w, col)
+	stack.Pop()
+	return m
 	//----------- end --------------------
 
 }
 
 func (b *Border) draw(gtx layout.Context, w layout.Widget, col color.NRGBA) layout.Dimensions {
-	defer op.Save(gtx.Ops).Load()
+	//defer op.Save(gtx.Ops).Load()
+
+	// Push offset to the transformation stack.
+	// stack := op.Offset(...).Push(ops)
+	//defer op.SaveStack{}.Load()
+
 	dims := w(gtx)
 	sz := layout.FPt(dims.Size) // переводим в f32.Point
 	r := f32.Rectangle{Max: sz}
@@ -69,11 +75,12 @@ func (b *Border) draw(gtx layout.Context, w layout.Widget, col color.NRGBA) layo
 
 	paint.FillShape(gtx.Ops,
 		col,
-		clip.Stroke{
+		clip.Op(clip.Stroke{
 			Path:  clip.UniformRRect(r, rr).Path(gtx.Ops),
-			Style: clip.StrokeStyle{Width: width},
-		}.Op(),
+			Width: 2,
+			//Style: clip.StrokeStyle{Width: width},
+		}.Op()),
 	)
-
+	//paint.PaintOp{}.Add(gtx.Ops)
 	return dims
 }

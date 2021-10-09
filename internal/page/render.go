@@ -31,13 +31,14 @@ func (p *TmainPage) Render() {
 				dims := splitFlex.Layout(gtx, leftList, rightList)
 				return dims //D{Size: image.Pt(50, 100)}
 			}),
+
 		// layout.Flexed(1, layout.Widget( // флекс заполняет все оставшеееся пространство
 
 		// 	func(gtx C) D {
 		// 		//gtx.Constraints.Min.X = 2500
 		// 		// cp := material.Caption(p.th, "пусто\nllllll")
 		// 		// return cp.Layout(gtx)
-		// 		return material.List(p.Th, p.List).Layout(gtx, len(*p.MainList), func(gtx C, i int) D {
+		//return material.List(p.Th, p.List).Layout(gtx, len(*p.MainList), func(gtx C, i int) D {
 		// 			dims := layout.UniformInset(unit.Dp(10)).Layout(gtx, (*p.MainList)[i]) // UniformInset общий margin 10???
 		// 			//dims.Size.Y = p.gtx.Constraints.Max.Y + 500
 		// 			log.Println("основной", dims)

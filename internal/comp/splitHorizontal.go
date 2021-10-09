@@ -1,8 +1,6 @@
 package comp
 
 import (
-	"log"
-
 	"gioui.org/layout"
 	"github.com/ark-go/giostart/internal"
 )
