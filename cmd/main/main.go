@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"io/fs"
 	"log"
 	"os"
 
@@ -23,6 +24,20 @@ type D = layout.Dimensions
 func main() {
 	//e := make(chan struct{})
 	log.Println("Версия: ", versionProg)
+	// user, err := user.Current()
+	// if err != nil {
+	// 	log.Fatalf(err.Error())
+	// }
+	// homeDirectory := user.HomeDir
+	// log.Println("Home Directory:", homeDirectory)
+	err := os.Mkdir("testArkWasm", fs.ModeAppend)
+	if err != nil {
+		log.Println("Не создать каталог.")
+	}
+	// d := filepath.Join(homeDirectory, "testArkWasmHome")
+	// os.Mkdir(d, fs.ModeAppend)
+	//os.Mkdir("testArkWasm", fs.ModeAppend)
+
 	// Setup a separate channel to provide ticks to increment progress
 	// progressIncrementer = make(chan bool)
 	// go func() {

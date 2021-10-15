@@ -28,7 +28,7 @@ func (p *TmainPage) Render() {
 		layout.Flexed(1,
 			func(gtx C) D {
 				splitFlex.Init(40, 10)
-				dims := splitFlex.Layout(gtx, leftList, rightList)
+				dims := splitFlex.Layout(gtx, leftList, rightList2)
 				return dims //D{Size: image.Pt(50, 100)}
 			}),
 

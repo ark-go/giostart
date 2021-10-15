@@ -11,6 +11,7 @@ import (
 	"log"
 	"time"
 
+	"gioui.org/font/gofont"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -18,6 +19,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget"
+	"gioui.org/widget/material"
 )
 
 type C = layout.Context
@@ -69,6 +71,23 @@ type SplitFlexCol struct {
 	leave     bool
 }
 
+var theme *material.Theme
+var listRight *widget.List
+
+func init() {
+	theme = material.NewTheme(gofont.Collection())
+
+	listRight = &widget.List{
+		List: layout.List{
+			Axis: layout.Vertical,
+		},
+	}
+	//listRight.Dragging()
+	//listRight.Position.BeforeEnd = false
+	//listRight.Position = layout.Position{}
+	//listRight.Scrollbar.IndicatorHovered()
+
+}
 func (s *SplitFlexCol) Init(leftProcent int, barWidth int) {
 	s.scr = widget.Scrollbar{}
 	if s.initVal {
@@ -118,7 +137,7 @@ func intToPx(gtx C, v int) int {
 func floatToPx(gtx C, v float32) int {
 	return gtx.Px(unit.Dp(v))
 }
-func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[]layout.FlexChild) layout.Dimensions {
+func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft *[]layout.FlexChild, childrenRight *[]layout.Widget) layout.Dimensions {
 	{
 		//	stack := op.Save(gtx.Ops)
 		for _, ev := range gtx.Events(s) {
@@ -247,15 +266,21 @@ func (s *SplitFlexCol) Layout(gtx layout.Context, childrenLeft, childrenRight *[
 
 		layout.Rigid(func(gtx C) D {
 			s.setBackground(gtx, s.BackgroundRight) // закрашиваем фон чтоб не был прозрачным
-			return inset.Layout(gtx, func(gtx C) D {
-				return layout.Flex{ // вертикальный flex
-					Axis: layout.Vertical,
-				}.Layout(gtx, *childrenRight...) // детки
+			// return inset.Layout(gtx, func(gtx C) D {
+			// 	return layout.Flex{ // вертикальный flex
+			// 		Axis: layout.Vertical,
+			// 	}.Layout(gtx, *childrenRight...) // детки
+			// })
+			return material.List(theme, listRight).Layout(gtx, len(*childrenRight), func(gtx C, i int) D {
+				// 	//return layout.UniformInset(unit.Dp(10)).Layout(gtx, *childrenRight[i]) // тут margin 10???
+				// return layout.UniformInset(unit.Dp(5)).Layout(gtx, func(gtx C) D {
+				// 	return layout.Flex{
+				// 		Axis: layout.Horizontal,
+				// 	}.Layout(gtx, (*childrenRight)[i])
+				// },
+				// )
+				return layout.UniformInset(unit.Dp(25)).Layout(gtx, (*childrenRight)[i])
 			})
-			//	dim := s.scr.Layout(gtx, layout.Vertical, 0.25, 1)
-			//	log.Println("sssssscr", dim.Size)
-			//	return widgets.ScrollWidget.Layout(gtx, widgets.ScrollList)
-
 		}),
 	)
 	s.Layout4(gtx) // :)  да, можно рисовать и после

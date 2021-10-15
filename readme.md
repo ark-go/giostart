@@ -1,11 +1,16 @@
-v0.0.5 - до сюда пример про яйцо  
-v0.0.13 - splitFlexCol первый пошел.
+# **Gio Ui**
 
-v.0.0.14 - меняется версия Gio (go.mod), все нахрен слетает. все исправляем по надобности. (исправлям op.Save)  
-splitFlexCol - работает продолжаем
+## Cross-Platform GUI for Go
 
-```
-[изучаем тут](https://git.sr.ht/~eliasnaur/gio/commit/6e9574245074656fe272928ec0523be4749a80a9)
+https://gioui.org/
+
+тут я играюсь просто так...
+
+- v.0.0.14 - меняется версия Gio (go.mod), ~~все нахрен слетает~~. все исправляем по надобности. (исправлям op.Save)
+  - splitFlexCol - работает продолжаем
+
+```golang
+[study here](https://git.sr.ht/~eliasnaur/gio/commit/6e9574245074656fe272928ec0523be4749a80a9).
 
 API change: replace op.Save/Load with explicit Push/Pop scopes for
 op.TransformOps, pointer.AreaOps, clip.Ops.
@@ -33,3 +38,6 @@ The example above now becomes:
     // Restore state.
     stack.Pop()
 ```
+
+- v0.0.13 - splitFlexCol первый пошел.
+- v0.0.5 - до сюда пример про яйцо
